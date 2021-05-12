@@ -1,0 +1,31 @@
+{
+	"name": "w7/rangine-tracer",
+	"description": " Rangine Tracer.",
+	"keywords": [
+		"rangine",
+		"tracer",
+		"opentrace"
+	],
+	"license": "Apache-2.0",
+	"require": {
+		"php": ">=7.1.0",
+		"w7/rangine": "*",
+		"opentracing/opentracing": "^1.0",
+		"jcchavezs/zipkin-opentracing": "^1.0"
+	},
+	"require-dev": {
+		"w7/php-cs-fixer": "*"
+	},
+	"autoload": {
+		"psr-4": {
+			"W7\\Tracer\\": "src/"
+		}
+	},
+	"extra": {
+		"rangine": {
+			"providers": [
+				"W7\\Tracer\\ServiceProvider"
+			]
+		}
+	}
+}
