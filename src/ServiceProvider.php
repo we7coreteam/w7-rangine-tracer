@@ -12,7 +12,6 @@
 
 namespace W7\Tracer;
 
-use W7\App;
 use W7\Core\Cache\Event\MakeConnectionEvent;
 use W7\Core\Database\Event\QueryExecutedEvent;
 use W7\Core\Database\Event\TransactionBeginningEvent;
@@ -22,6 +21,8 @@ use W7\Core\Provider\ProviderAbstract;
 use W7\Core\Route\Event\RouteMatchedEvent;
 use W7\Core\Server\ServerEvent;
 use W7\Tracer\Cache\MakeConnectionListener;
+use W7\Tracer\Contract\HandlerInterface;
+use W7\Tracer\Contract\TracerFactoryInterface;
 use W7\Tracer\Database\QueryExecutedListener;
 use W7\Tracer\Database\TransactionBeginningListener;
 use W7\Tracer\Database\TransactionCommittedListener;
@@ -29,16 +30,11 @@ use W7\Tracer\Database\TransactionRolledBackListener;
 use W7\Tracer\Database\MakeConnectionListener as MakeDatabaseConnectionListener;
 use W7\Core\Database\Event\MakeConnectionEvent as MakeDatabaseConnectionEvent;
 use W7\Core\Pool\Event\MakeConnectionEvent as PoolMakeConnectionEvent;
+use W7\Tracer\Handler\ZipkinHandler;
 use W7\Tracer\Pool\MakeConnectionListener as PoolMakeConnectionListener;
 use W7\Tracer\Request\AfterRequestListener;
 use W7\Tracer\Request\BeforeRequestListener;
 use W7\Tracer\Route\RouteMatchedListener;
-use Zipkin\Endpoint;
-use Zipkin\Reporters\Http;
-use Zipkin\Reporters\Log;
-use Zipkin\Samplers\BinarySampler;
-use Zipkin\TracingBuilder;
-use ZipkinOpenTracing\Tracer;
 
 class ServiceProvider extends ProviderAbstract {
 	/**
@@ -47,20 +43,42 @@ class ServiceProvider extends ProviderAbstract {
 	 * @return void
 	 */
 	public function register() {
-		$this->registerLog();
+		if (empty($this->config->get('opentracing.enable'))) {
+			return;
+		}
+
+		$this->registerTracerResolver();
 		$this->registerListener();
 	}
 
-	private function registerLog() {
-		if (!empty($this->config->get('log.channel.tracer'))) {
-			return false;
-		}
-		$this->registerLogger('tracer', [
-			'driver' => $this->config->get('handler.log.daily'),
-			'path' => App::getApp()->getRuntimePath() . '/logs/tracer.log',
-			'level' => 'debug',
-			'days' => 1
-		]);
+	private function registerTracerResolver() {
+		$this->container->set(TracerFactoryInterface::class, function () {
+			$tracerFactory = new TracerFactory();
+			$tracerFactory->setDefaultChannel($this->config->get('opentracing.default', 'default'));
+
+			$tracerMap = $this->config->get('opentracing.tracer', []);
+			foreach ($tracerMap as $name => $tracer) {
+				$handler = $tracer['handler'] ?? ZipkinHandler::class;
+				$options = $tracer['options'] ?? [];
+				$tracerFactory->registerTracerResolver($name, function ($name, array $replenishOptions = []) use ($handler, $options) {
+					$tracerName = $options['alias'] ?? $name;
+					$options = array_merge($replenishOptions, $options);
+					$contextKey = 'opentracing.tracer.' . $tracerName;
+					if (!$tracer = $this->getContext()->getContextDataByKey($contextKey)) {
+						/**
+						* @var HandlerInterface $handler
+						*/
+						$handler = new $handler();
+						$tracer = $handler->make($name, $options);
+						$this->getContext()->setContextDataByKey($contextKey, $tracer);
+					}
+
+					return $tracer;
+				});
+			}
+
+			return $tracerFactory;
+		});
 	}
 
 	private function registerListener() {
@@ -74,33 +92,6 @@ class ServiceProvider extends ProviderAbstract {
 		$this->getEventDispatcher()->listen(TransactionRolledBackEvent::class, TransactionRolledBackListener::class);
 		$this->getEventDispatcher()->listen(PoolMakeConnectionEvent::class, PoolMakeConnectionListener::class);
 		$this->getEventDispatcher()->listen(ServerEvent::ON_USER_AFTER_REQUEST, AfterRequestListener::class);
-	}
-
-	protected function getZipKinTracer() {
-		$endpoint = Endpoint::create(
-			$this->config->get('tracer.name', $this->name),
-			$this->config->get('tracer.zipkin.host', '127.0.0.1'),
-			null,
-			$this->config->get('tracer.zipkin.port', '9411')
-		);
-		$logger = $this->getLogger()->channel('tracer');
-		if ($this->config->get('tracer.zipkin.reporter') === 'http') {
-			$reporter = new Http(
-				[],
-				null,
-				$logger
-			);
-		} else {
-			$reporter = new Log($logger);
-		}
-		$sampler = BinarySampler::createAsAlwaysSample();
-		$tracing = TracingBuilder::create()
-			->havingLocalEndpoint($endpoint)
-			->havingSampler($sampler)
-			->havingReporter($reporter)
-			->build();
-
-		return new Tracer($tracing);
 	}
 
 	/**

@@ -13,37 +13,25 @@
 namespace W7\Tracer\Request;
 
 use W7\Core\Listener\ListenerAbstract;
+use W7\Http\Message\Server\Response;
+use W7\Tracer\TracerSpanTrait;
+use const OpenTracing\Tags\ERROR;
+use const OpenTracing\Tags\HTTP_STATUS_CODE;
 
 class AfterRequestListener extends ListenerAbstract {
+	use TracerSpanTrait;
+
 	public function run(...$params) {
-		$this->log();
-	}
+		/**
+		 * @var Response $response
+		 */
+		$response = $params[2];
 
-	public function getCookies() {
-		$cookies = [];
-		foreach ((array)$this->getContext()->getResponse()->getCookies() as $name => $cookie) {
-			$cookies[] = [
-				'name' => $cookie->getName(),
-				'value' => $cookie->getValue() ? : 1,
-				'expire' => $cookie->getExpiresTime(),
-				'path' => $cookie->getPath(),
-				'domain' => $cookie->getDomain(),
-				'secure' => $cookie->isSecure(),
-				'http_only' => $cookie->isHttpOnly()
-			];
-		}
+		$span = $this->getSpanFromContext();
+		$span->setTag(HTTP_STATUS_CODE, $response->getStatusCode());
+		$span->setTag(ERROR, true);
+		$span->finish();
 
-		return $cookies;
-	}
-
-	protected function log() {
-		$beginMemory = $this->getContext()->getContextDataByKey('memory_usage');
-		$memoryUsage = memory_get_usage() - $beginMemory;
-		$time = round(microtime(true) - $this->getContext()->getContextDataByKey('time'), 3);
-
-		itrace('response-header', serialize($this->getContext()->getResponse()->getHeaders()));
-		itrace('response-cookies', serialize($this->getCookies()));
-		itrace('response-content', $this->getContext()->getResponse()->getBody()->getContents());
-		itrace('end-request', 'memory_usage: ' . round($memoryUsage/1024/1024, 2).'MB' . ', time: ' . $time . 's');
+		$this->getTracer()->flush();
 	}
 }
