@@ -14,17 +14,18 @@ namespace W7\Tracer\Cache;
 
 use W7\Core\Cache\Event\MakeConnectionEvent;
 use W7\Core\Listener\ListenerAbstract;
+use W7\Tracer\TracerSpanTrait;
 
 class MakeConnectionListener extends ListenerAbstract {
+	use TracerSpanTrait;
+
 	public function run(...$params) {
 		/**
 		 * @var MakeConnectionEvent $event
 		 */
 		$event = $params[0];
-		$this->log($event);
-	}
-
-	protected function log(MakeConnectionEvent $event) {
-		itrace('cache', 'create ' . $event->name . ' connection');
+		$span = $this->getSpanFromContext('cache');
+		$span->setTag('channel', $event->name);
+		$span->finish();
 	}
 }

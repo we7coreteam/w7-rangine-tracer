@@ -27,7 +27,7 @@ class AfterRequestListener extends ListenerAbstract {
 		 */
 		$response = $params[2];
 
-		$span = $this->getSpanFromContext();
+		$span = $this->getSpanFromContext('request');
 		$span->setTag(HTTP_STATUS_CODE, $response->getStatusCode());
 		$span->setTag(ERROR, true);
 		$span->finish();
