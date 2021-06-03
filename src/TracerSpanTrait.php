@@ -21,8 +21,8 @@ use const OpenTracing\Tags\SPAN_KIND;
 trait TracerSpanTrait {
 	use AppCommonTrait;
 
-	protected function getTracer($name = 'default') {
-		$contextKey = sprintf('opentracing.tracer.handler.%s', $name);
+	protected function getTracer($name = '') {
+		$contextKey = sprintf('opentracing.tracer.handler.%s', empty($name) ? 'default' : '');
 		if (!$tracer = $this->getContext()->getContextDataByKey($contextKey)) {
 			/**
 			 * @var TracerFactoryInterface $traceFactory
@@ -45,10 +45,10 @@ trait TracerSpanTrait {
 	 * @param string $kind
 	 * @return Span
 	 */
-	protected function getSpan(string $spanName = 'server', string $kind = 'server') {
+	protected function getSpan(string $spanName = 'server', string $kind = 'server', $traceName = '') {
 		$contextKey = 'opentracing.tracer.span.' . $spanName . '.' . $kind;
 		if (!$span = $this->getContext()->getContextDataByKey($contextKey)) {
-			$span = $this->makeSpan($spanName, $kind);
+			$span = $this->makeSpan($traceName, $spanName, $kind);
 			$this->getContext()->setContextDataByKey($contextKey, $span);
 		}
 
@@ -60,8 +60,8 @@ trait TracerSpanTrait {
 		$span->finish();
 	}
 
-	protected function makeSpan($spanName, $kind) {
-		$tracer = $this->getTracer();
+	protected function makeSpan($traceName, $spanName, $kind) {
+		$tracer = $this->getTracer($traceName);
 		$request = $this->getContext()->getRequest();
 
 		$contextHeaders = [];

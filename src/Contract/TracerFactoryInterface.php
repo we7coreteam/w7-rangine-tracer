@@ -15,5 +15,5 @@ namespace W7\Tracer\Contract;
 use OpenTracing\Tracer;
 
 interface TracerFactoryInterface {
-	public function channel($name = 'default', array $options = []) : Tracer;
+	public function channel($name = '', array $options = []) : Tracer;
 }
