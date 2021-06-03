@@ -12,6 +12,8 @@
 
 namespace W7\Tracer;
 
+use W7\Core\Cache\Event\AfterMakeConnectionEvent;
+use W7\Core\Cache\Event\BeforeMakeConnectionEvent;
 use W7\Core\Cache\Event\MakeConnectionEvent;
 use W7\Core\Database\Event\QueryExecutedEvent;
 use W7\Core\Database\Event\TransactionBeginningEvent;
@@ -19,15 +21,14 @@ use W7\Core\Database\Event\TransactionCommittedEvent;
 use W7\Core\Database\Event\TransactionRolledBackEvent;
 use W7\Core\Provider\ProviderAbstract;
 use W7\Core\Server\ServerEvent;
-use W7\Tracer\Cache\MakeConnectionListener;
+use W7\Tracer\Cache\AfterMakeConnectionListener;
+use W7\Tracer\Cache\BeforeMakeConnectionListener;
 use W7\Tracer\Contract\HandlerInterface;
 use W7\Tracer\Contract\TracerFactoryInterface;
 use W7\Tracer\Database\QueryExecutedListener;
 use W7\Tracer\Database\TransactionBeginningListener;
 use W7\Tracer\Database\TransactionCommittedListener;
 use W7\Tracer\Database\TransactionRolledBackListener;
-use W7\Tracer\Database\MakeConnectionListener as MakeDatabaseConnectionListener;
-use W7\Core\Database\Event\MakeConnectionEvent as MakeDatabaseConnectionEvent;
 use W7\Tracer\Handler\ZipkinHandler;
 use W7\Tracer\Request\AfterRequestListener;
 use W7\Tracer\Request\BeforeRequestListener;
@@ -79,8 +80,10 @@ class ServiceProvider extends ProviderAbstract {
 
 	private function registerListener() {
 		$this->getEventDispatcher()->listen(ServerEvent::ON_USER_BEFORE_REQUEST, BeforeRequestListener::class);
-		$this->getEventDispatcher()->listen(MakeConnectionEvent::class, MakeConnectionListener::class);
-		$this->getEventDispatcher()->listen(MakeDatabaseConnectionEvent::class, MakeDatabaseConnectionListener::class);
+		$this->getEventDispatcher()->listen(BeforeMakeConnectionEvent::class, BeforeMakeConnectionListener::class);
+		$this->getEventDispatcher()->listen(AfterMakeConnectionEvent::class, AfterMakeConnectionListener::class);
+		$this->getEventDispatcher()->listen(\W7\Core\Database\Event\BeforeMakeConnectionEvent::class, \W7\Tracer\Database\BeforeMakeConnectionListener::class);
+		$this->getEventDispatcher()->listen(\W7\Core\Database\Event\AfterMakeConnectionEvent::class, \W7\Tracer\Database\AfterMakeConnectionListener::class);
 		$this->getEventDispatcher()->listen(QueryExecutedEvent::class, QueryExecutedListener::class);
 		$this->getEventDispatcher()->listen(TransactionBeginningEvent::class, TransactionBeginningListener::class);
 		$this->getEventDispatcher()->listen(TransactionCommittedEvent::class, TransactionCommittedListener::class);

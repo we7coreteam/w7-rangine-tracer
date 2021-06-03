@@ -21,13 +21,23 @@ use const OpenTracing\Tags\SPAN_KIND;
 trait TracerSpanTrait {
 	use AppCommonTrait;
 
-	protected function getTracer($name = '') {
-		/**
-		 * @var TracerFactoryInterface $traceFactory
-		 */
-		$traceFactory = $this->getContainer()->get(TracerFactoryInterface::class);
+	protected function getTracer($name = 'default') {
+		$contextKey = sprintf('opentracing.tracer.handler.%s', $name);
+		if (!$tracer = $this->getContext()->getContextDataByKey($contextKey)) {
+			/**
+			 * @var TracerFactoryInterface $traceFactory
+			 */
+			$traceFactory = $this->getContainer()->get(TracerFactoryInterface::class);
+			$tracer = $traceFactory->channel($name);
+			$this->getContext()->setContextDataByKey($contextKey, $tracer);
+			if (isCo()) {
+				$this->getContext()->defer(function () use ($tracer) {
+					$tracer->flush();
+				});
+			}
+		}
 
-		return $traceFactory->channel($name);
+		return $tracer;
 	}
 
 	/**
@@ -35,17 +45,22 @@ trait TracerSpanTrait {
 	 * @param string $kind
 	 * @return Span
 	 */
-	protected function getSpanFromContext(string $spanName = 'server', string $kind = 'server') {
+	protected function getSpan(string $spanName = 'server', string $kind = 'server') {
 		$contextKey = 'opentracing.tracer.span.' . $spanName . '.' . $kind;
 		if (!$span = $this->getContext()->getContextDataByKey($contextKey)) {
-			$span = $this->getSpan($spanName, $kind);
+			$span = $this->makeSpan($spanName, $kind);
 			$this->getContext()->setContextDataByKey($contextKey, $span);
 		}
 
 		return $span;
 	}
 
-	protected function getSpan($spanName, $kind) {
+	protected function finishSpan(Span $span) {
+		$this->getContext()->setContextDataByKey($span->getOperationName(), null);
+		$span->finish();
+	}
+
+	protected function makeSpan($spanName, $kind) {
 		$tracer = $this->getTracer();
 		$request = $this->getContext()->getRequest();
 

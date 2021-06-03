@@ -20,6 +20,12 @@ class TransactionCommittedListener extends DatabaseListenerAbstract {
 		 * @var TransactionCommittedEvent $event
 		 */
 		$event = $params[0];
-		$this->log($event);
+
+		$span = $this->getSpan($event->connectionName);
+		$span->log(['transaction-commit:level' . $event->connection->transactionLevel()]);
+
+		if ($event->connection->transactionLevel() === 0) {
+			$this->finishSpan($span);
+		}
 	}
 }

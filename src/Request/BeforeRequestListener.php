@@ -25,10 +25,11 @@ class BeforeRequestListener extends ListenerAbstract {
 		 */
 		$request = $params[0];
 
-		$span = $this->getSpanFromContext('request');
+		$span = $this->getSpan('request');
 		$span->setTag('protocol', $params[2]);
 		$span->setTag('coroutine.id', $this->getContext()->getCoroutineId());
 		$span->setTag('request.path', $request->getUri()->getPath());
 		$span->setTag('request.method', $request->getMethod());
+		$span->log(['begin-request']);
 	}
 }

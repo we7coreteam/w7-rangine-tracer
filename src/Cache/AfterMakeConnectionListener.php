@@ -12,20 +12,20 @@
 
 namespace W7\Tracer\Cache;
 
-use W7\Core\Cache\Event\MakeConnectionEvent;
+use W7\Core\Cache\Event\AfterMakeConnectionEvent;
 use W7\Core\Listener\ListenerAbstract;
 use W7\Tracer\TracerSpanTrait;
 
-class MakeConnectionListener extends ListenerAbstract {
+class AfterMakeConnectionListener extends ListenerAbstract {
 	use TracerSpanTrait;
 
 	public function run(...$params) {
 		/**
-		 * @var MakeConnectionEvent $event
+		 * @var AfterMakeConnectionEvent $event
 		 */
 		$event = $params[0];
-		$span = $this->getSpanFromContext('cache');
-		$span->setTag('channel', $event->name);
-		$span->finish();
+		$span = $this->getSpan('cache-' . $event->name);
+		$span->log(['make-connection-success']);
+		$this->finishSpan($span);
 	}
 }

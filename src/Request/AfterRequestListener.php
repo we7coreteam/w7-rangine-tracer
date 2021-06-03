@@ -27,11 +27,17 @@ class AfterRequestListener extends ListenerAbstract {
 		 */
 		$response = $params[2];
 
-		$span = $this->getSpanFromContext('request');
-		$span->setTag(HTTP_STATUS_CODE, $response->getStatusCode());
-		$span->setTag(ERROR, true);
-		$span->finish();
+		$span = $this->getSpan('request');
+		$responseCode = $response->getStatusCode();
+		$span->setTag(HTTP_STATUS_CODE, $responseCode);
+		$span->log(['finish-request']);
+		if ($responseCode != 200) {
+			$span->setTag(ERROR, $response->getBody()->getContents());
+		}
+		$this->finishSpan($span);
 
-		$this->getTracer()->flush();
+		if (!isCo()) {
+			$this->getTracer()->flush();
+		}
 	}
 }
