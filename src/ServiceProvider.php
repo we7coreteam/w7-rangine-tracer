@@ -14,7 +14,6 @@ namespace W7\Tracer;
 
 use W7\Core\Cache\Event\AfterMakeConnectionEvent;
 use W7\Core\Cache\Event\BeforeMakeConnectionEvent;
-use W7\Core\Cache\Event\MakeConnectionEvent;
 use W7\Core\Database\Event\QueryExecutedEvent;
 use W7\Core\Database\Event\TransactionBeginningEvent;
 use W7\Core\Database\Event\TransactionCommittedEvent;
@@ -23,7 +22,6 @@ use W7\Core\Provider\ProviderAbstract;
 use W7\Core\Server\ServerEvent;
 use W7\Tracer\Cache\AfterMakeConnectionListener;
 use W7\Tracer\Cache\BeforeMakeConnectionListener;
-use W7\Tracer\Contract\HandlerInterface;
 use W7\Tracer\Contract\TracerFactoryInterface;
 use W7\Tracer\Database\QueryExecutedListener;
 use W7\Tracer\Database\TransactionBeginningListener;
@@ -58,19 +56,9 @@ class ServiceProvider extends ProviderAbstract {
 				$handler = $tracer['handler'] ?? ZipkinHandler::class;
 				$options = $tracer['options'] ?? [];
 				$tracerFactory->registerTracerResolver($name, function ($name, array $replenishOptions = []) use ($handler, $options) {
-					$tracerName = $options['alias'] ?? $name;
 					$options = array_merge($replenishOptions, $options);
-					$contextKey = 'opentracing.tracer.' . $tracerName;
-					if (!$tracer = $this->getContext()->getContextDataByKey($contextKey)) {
-						/**
-						* @var HandlerInterface $handler
-						*/
-						$handler = new $handler();
-						$tracer = $handler->make($name, $options);
-						$this->getContext()->setContextDataByKey($contextKey, $tracer);
-					}
-
-					return $tracer;
+					$handler = new $handler();
+					return $handler->make($name, $options);
 				});
 			}
 
