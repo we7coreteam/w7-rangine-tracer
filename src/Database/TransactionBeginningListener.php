@@ -21,7 +21,7 @@ class TransactionBeginningListener extends DatabaseListenerAbstract {
 		 */
 		$event = $params[0];
 
-		$span = $this->getSpan($event->connectionName);
+		$span = $this->getDatabaseSpan($event->connectionName);
 		$span->log(['transaction-begin:level' . $event->connection->transactionLevel()]);
 	}
 }

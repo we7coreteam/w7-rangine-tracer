@@ -43,7 +43,7 @@ class QueryExecutedListener extends DatabaseListenerAbstract {
 			$sql = preg_replace($regex, $binding, $sql, 1);
 		}
 
-		$span = $this->getSpan($event->connectionName);
+		$span = $this->getDatabaseSpan($event->connectionName);
 		$span->setTag(DATABASE_STATEMENT, $sql);
 
 		if ($event->connection->transactionLevel() === 0) {

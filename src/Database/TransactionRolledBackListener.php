@@ -21,7 +21,7 @@ class TransactionRolledBackListener extends DatabaseListenerAbstract {
 		 */
 		$event = $params[0];
 
-		$span = $this->getSpan($event->connectionName);
+		$span = $this->getDatabaseSpan($event->connectionName);
 		$span->log(['transaction-rollback:level' . $event->connection->transactionLevel()]);
 
 		if ($event->connection->transactionLevel() === 0) {

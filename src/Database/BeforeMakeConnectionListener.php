@@ -11,7 +11,7 @@ class BeforeMakeConnectionListener extends DatabaseListenerAbstract {
 		 * @var BeforeMakeConnectionEvent $event
 		 */
 		$event = $params[0];
-		$span = $this->getSpan($event->name);
+		$span = $this->getDatabaseSpan($event->name);
 		$span->setTag(DATABASE_TYPE, 'database');
 		$span->log(['make-connection']);
 	}

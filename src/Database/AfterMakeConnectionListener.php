@@ -20,7 +20,7 @@ class AfterMakeConnectionListener extends DatabaseListenerAbstract {
 		 * @var AfterMakeConnectionEvent $event
 		 */
 		$event = $params[0];
-		$span = $this->getSpan($event->name);
+		$span = $this->getDatabaseSpan($event->name);
 		$span->log(['make-connection-success']);
 	}
 }
