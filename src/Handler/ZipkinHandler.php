@@ -27,7 +27,7 @@ class ZipkinHandler implements HandlerInterface {
 			$options['ipv6'] ?? null,
 			$options['port'] ?? '9411'
 		);
-		$reporter = $options['reporter'] ?? new Http();
+		$reporter = $options['reporter'] ?? new Http(['endpoint_url' => $options['endpoint'] ?? Http::DEFAULT_OPTIONS['endpoint_url']]);
 		$sampler = $options['sampler'] ?? BinarySampler::createAsAlwaysSample();
 		$tracing = TracingBuilder::create()
 			->havingLocalEndpoint($endpoint)
