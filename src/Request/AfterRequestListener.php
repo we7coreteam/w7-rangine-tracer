@@ -25,7 +25,7 @@ class AfterRequestListener extends ListenerAbstract {
 		/**
 		 * @var Response $response
 		 */
-		$response = $params[2];
+		$response = $params[1];
 
 		$span = $this->getSpan('request');
 		$responseCode = $response->getStatusCode();

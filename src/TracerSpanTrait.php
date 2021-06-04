@@ -73,12 +73,16 @@ trait TracerSpanTrait {
 				$header = rtrim(implode(';', $header), ';');
 			}
 		}
+		$headerContextKey = 'opentracing:tracer:headers';
+		$contextHeaders = array_merge($contextHeaders, $this->getContext()->getContextDataByKey($headerContextKey, []));
 		$spanContext = $tracer->extract(TEXT_MAP, $contextHeaders);
 		$scope = $tracer->startActiveSpan($spanName, ['child_of' => $spanContext]);
 		$traceSpan = $scope->getSpan();
+		$traceHeaders = [];
 		$tracer->inject($traceSpan->getContext(), TEXT_MAP, $traceHeaders);
 		$traceSpan->setTag(SPAN_KIND, $kind);
 		if ($request) {
+			$this->getContext()->setContextDataByKey($headerContextKey, $traceHeaders);
 			foreach ($traceHeaders as $name => $header) {
 				$request = $request->withHeader($name, $header);
 			}
