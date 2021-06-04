@@ -24,7 +24,7 @@ class ZipkinHandler implements HandlerInterface {
 		$endpoint = Endpoint::create(
 			$name,
 			$options['ipv4'] ?? '127.0.0.1',
-			$options['ipv6'] ?? '',
+			$options['ipv6'] ?? null,
 			$options['port'] ?? '9411'
 		);
 		$reporter = $options['reporter'] ?? new Http();

@@ -34,6 +34,6 @@ class TracerFactory implements TracerFactoryInterface {
 		}
 
 		$resolver = $this->tracerResolverMap[$name];
-		return $resolver($options);
+		return $resolver($name, $options);
 	}
 }
