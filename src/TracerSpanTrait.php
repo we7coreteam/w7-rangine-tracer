@@ -56,7 +56,8 @@ trait TracerSpanTrait {
 	}
 
 	protected function finishSpan(Span $span) {
-		$this->getContext()->setContextDataByKey($span->getOperationName(), null);
+		$contextKey = 'opentracing.tracer.span.' . $span->getOperationName() . '.' . $span->getContext()->getBaggageItem('x-span-kink');
+		$this->getContext()->setContextDataByKey($contextKey, null);
 		$span->finish();
 	}
 
@@ -81,6 +82,7 @@ trait TracerSpanTrait {
 		$traceHeaders = [];
 		$tracer->inject($traceSpan->getContext(), TEXT_MAP, $traceHeaders);
 		$traceSpan->setTag(SPAN_KIND, $kind);
+		$traceSpan->addBaggageItem('x-span-kink', $kind);
 		if ($request) {
 			$this->getContext()->setContextDataByKey($headerContextKey, $traceHeaders);
 			foreach ($traceHeaders as $name => $header) {
