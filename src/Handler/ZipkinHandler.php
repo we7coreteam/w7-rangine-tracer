@@ -22,10 +22,7 @@ use Zipkin\TracingBuilder;
 class ZipkinHandler implements HandlerInterface {
 	public function make($name, array $options = []): Tracer {
 		$endpoint = Endpoint::create(
-			$name,
-			$options['ipv4'] ?? '127.0.0.1',
-			$options['ipv6'] ?? null,
-			$options['port'] ?? '9411'
+			$name
 		);
 		$reporter = $options['reporter'] ?? new Http(['endpoint_url' => $options['endpoint'] ?? Http::DEFAULT_OPTIONS['endpoint_url']]);
 		$sampler = $options['sampler'] ?? BinarySampler::createAsAlwaysSample();
