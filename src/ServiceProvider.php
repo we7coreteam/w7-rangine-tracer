@@ -68,14 +68,18 @@ class ServiceProvider extends ProviderAbstract {
 
 	private function registerListener() {
 		$this->getEventDispatcher()->listen(ServerEvent::ON_USER_BEFORE_REQUEST, BeforeRequestListener::class);
-		$this->getEventDispatcher()->listen(BeforeMakeConnectionEvent::class, BeforeMakeConnectionListener::class);
-		$this->getEventDispatcher()->listen(AfterMakeConnectionEvent::class, AfterMakeConnectionListener::class);
-		$this->getEventDispatcher()->listen(\W7\Core\Database\Event\BeforeMakeConnectionEvent::class, \W7\Tracer\Database\BeforeMakeConnectionListener::class);
-		$this->getEventDispatcher()->listen(\W7\Core\Database\Event\AfterMakeConnectionEvent::class, \W7\Tracer\Database\AfterMakeConnectionListener::class);
-		$this->getEventDispatcher()->listen(QueryExecutedEvent::class, QueryExecutedListener::class);
-		$this->getEventDispatcher()->listen(TransactionBeginningEvent::class, TransactionBeginningListener::class);
-		$this->getEventDispatcher()->listen(TransactionCommittedEvent::class, TransactionCommittedListener::class);
-		$this->getEventDispatcher()->listen(TransactionRolledBackEvent::class, TransactionRolledBackListener::class);
+		if ($this->config->get('opentracing.database.enable')) {
+			$this->getEventDispatcher()->listen(\W7\Core\Database\Event\BeforeMakeConnectionEvent::class, \W7\Tracer\Database\BeforeMakeConnectionListener::class);
+			$this->getEventDispatcher()->listen(\W7\Core\Database\Event\AfterMakeConnectionEvent::class, \W7\Tracer\Database\AfterMakeConnectionListener::class);
+			$this->getEventDispatcher()->listen(QueryExecutedEvent::class, QueryExecutedListener::class);
+			$this->getEventDispatcher()->listen(TransactionBeginningEvent::class, TransactionBeginningListener::class);
+			$this->getEventDispatcher()->listen(TransactionCommittedEvent::class, TransactionCommittedListener::class);
+			$this->getEventDispatcher()->listen(TransactionRolledBackEvent::class, TransactionRolledBackListener::class);
+		}
+		if ($this->config->get('opentracing.cache.enable')) {
+			$this->getEventDispatcher()->listen(BeforeMakeConnectionEvent::class, BeforeMakeConnectionListener::class);
+			$this->getEventDispatcher()->listen(AfterMakeConnectionEvent::class, AfterMakeConnectionListener::class);
+		}
 		$this->getEventDispatcher()->listen(ServerEvent::ON_USER_AFTER_REQUEST, AfterRequestListener::class);
 	}
 

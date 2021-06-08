@@ -13,6 +13,7 @@
 namespace W7\Tracer;
 
 use OpenTracing\Span;
+use W7\Core\Exception\HandlerExceptions;
 use W7\Core\Helper\Traiter\AppCommonTrait;
 use W7\Tracer\Contract\TracerFactoryInterface;
 use const OpenTracing\Formats\TEXT_MAP;
@@ -32,7 +33,15 @@ trait TracerSpanTrait {
 			$this->getContext()->setContextDataByKey($contextKey, $tracer);
 			if (isCo()) {
 				$this->getContext()->defer(function () use ($tracer) {
-					$tracer->flush();
+					try {
+						$tracer->flush();
+					} catch (\Throwable $e) {
+						/**
+						 * @var HandlerExceptions $exceptionHandler
+						 */
+						$exceptionHandler = $this->getContainer()->get(HandlerExceptions::class);
+						$exceptionHandler->getHandler()->report($e);
+					}
 				});
 			}
 		}

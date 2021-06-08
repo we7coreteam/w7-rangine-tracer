@@ -12,6 +12,7 @@
 
 namespace W7\Tracer\Request;
 
+use W7\Core\Exception\HandlerExceptions;
 use W7\Core\Listener\ListenerAbstract;
 use W7\Http\Message\Server\Response;
 use W7\Tracer\TracerSpanTrait;
@@ -37,7 +38,15 @@ class AfterRequestListener extends ListenerAbstract {
 		$this->finishSpan($span);
 
 		if (!isCo()) {
-			$this->getTracer()->flush();
+			try {
+				$this->getTracer()->flush();
+			} catch (\Throwable $e) {
+				/**
+				 * @var HandlerExceptions $exceptionHandler
+				 */
+				$exceptionHandler = $this->getContainer()->get(HandlerExceptions::class);
+				$exceptionHandler->getHandler()->report($e);
+			}
 		}
 	}
 }
