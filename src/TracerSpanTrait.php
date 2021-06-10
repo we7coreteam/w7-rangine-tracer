@@ -83,8 +83,6 @@ trait TracerSpanTrait {
 				$header = rtrim(implode(';', $header), ';');
 			}
 		}
-		$headerContextKey = 'opentracing:tracer:headers';
-		$contextHeaders = array_merge($contextHeaders, $this->getContext()->getContextDataByKey($headerContextKey, []));
 		$spanContext = $tracer->extract(TEXT_MAP, $contextHeaders);
 		$scope = $tracer->startActiveSpan($spanName, ['child_of' => $spanContext]);
 		$traceSpan = $scope->getSpan();
@@ -93,7 +91,6 @@ trait TracerSpanTrait {
 		$traceSpan->setTag(SPAN_KIND, $kind);
 		$traceSpan->addBaggageItem('x-span-kind', $kind);
 		if ($request) {
-			$this->getContext()->setContextDataByKey($headerContextKey, $traceHeaders);
 			foreach ($traceHeaders as $name => $header) {
 				$request = $request->withHeader($name, $header);
 			}
