@@ -23,7 +23,7 @@ trait TracerSpanTrait {
 	use AppCommonTrait;
 
 	protected function getTracer($name = '') {
-		$contextKey = sprintf('opentracing.tracer.handler.%s', empty($name) ? 'default' : '');
+		$contextKey = sprintf('opentracing.tracer.handler.%s', empty($name) ? 'default' : $name);
 		if (!$tracer = $this->getContext()->getContextDataByKey($contextKey)) {
 			/**
 			 * @var TracerFactoryInterface $traceFactory
@@ -55,7 +55,7 @@ trait TracerSpanTrait {
 	 * @return Span
 	 */
 	protected function getSpan(string $spanName = 'server', string $kind = 'server', $traceName = '') {
-		$contextKey = 'opentracing.tracer.span.' . $spanName . '.' . $kind;
+		$contextKey = 'opentracing.tracer.span.' . $spanName . '.' . $kind . '.' . $traceName;
 		if (!$span = $this->getContext()->getContextDataByKey($contextKey)) {
 			$span = $this->makeSpan($traceName, $spanName, $kind);
 			$this->getContext()->setContextDataByKey($contextKey, $span);
@@ -65,7 +65,7 @@ trait TracerSpanTrait {
 	}
 
 	protected function finishSpan(Span $span) {
-		$contextKey = 'opentracing.tracer.span.' . $span->getOperationName() . '.' . $span->getContext()->getBaggageItem('x-span-kind');
+		$contextKey = 'opentracing.tracer.span.' . $span->getOperationName() . '.' . $span->getContext()->getBaggageItem('x-span-kind') . '.' . $span->getContext()->getBaggageItem('x-span-tracer');
 		$this->getContext()->setContextDataByKey($contextKey, null);
 		$span->finish();
 	}
@@ -90,6 +90,7 @@ trait TracerSpanTrait {
 		$tracer->inject($traceSpan->getContext(), TEXT_MAP, $traceHeaders);
 		$traceSpan->setTag(SPAN_KIND, $kind);
 		$traceSpan->addBaggageItem('x-span-kind', $kind);
+		$traceSpan->addBaggageItem('x-span-tracer', $traceName);
 		if ($request) {
 			foreach ($traceHeaders as $name => $header) {
 				$request = $request->withHeader($name, $header);
