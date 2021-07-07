@@ -9,7 +9,7 @@
 	"license": "Apache-2.0",
 	"require": {
 		"php": ">=7.1.0",
-		"w7/rangine": "~2.4.0",
+		"w7/rangine": "^2.4.0",
 		"opentracing/opentracing": "^1.0",
 		"jcchavezs/zipkin-opentracing": "^1.0"
 	},
