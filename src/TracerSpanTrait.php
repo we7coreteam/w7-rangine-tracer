@@ -67,7 +67,15 @@ trait TracerSpanTrait {
 	protected function finishSpan(Span $span) {
 		$contextKey = 'opentracing.tracer.span.' . $span->getOperationName() . '.' . $span->getContext()->getBaggageItem('x-span-kind') . '.' . $span->getContext()->getBaggageItem('x-span-tracer');
 		$this->getContext()->setContextDataByKey($contextKey, null);
-		$span->finish();
+		try {
+			$span->finish();
+		} catch (\Throwable $e) {
+			/**
+			 * @var HandlerExceptions $exceptionHandler
+			 */
+			$exceptionHandler = $this->getContainer()->get(HandlerExceptions::class);
+			$exceptionHandler->getHandler()->report($e);
+		}
 	}
 
 	protected function makeSpan($traceName, $spanName, $kind) {
