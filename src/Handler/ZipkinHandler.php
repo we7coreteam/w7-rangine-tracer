@@ -24,8 +24,17 @@ class ZipkinHandler implements HandlerInterface {
 		$endpoint = Endpoint::create(
 			$name
 		);
-		$reporter = $options['reporter'] ?? new Http(['endpoint_url' => $options['endpoint'] ?? Http::DEFAULT_OPTIONS['endpoint_url']]);
-		$sampler = $options['sampler'] ?? BinarySampler::createAsAlwaysSample();
+		if (!empty($options['reporter'])) {
+			$reporter = new $options['reporter']($options);
+		} else {
+			$reporter = new Http(['endpoint_url' => $options['endpoint'] ?? Http::DEFAULT_OPTIONS['endpoint_url']]);
+		}
+		if (!empty($options['sampler'])) {
+			$sampler = new $options['sampler']($options);
+		} else {
+			$sampler = BinarySampler::createAsAlwaysSample();
+		}
+
 		$tracing = TracingBuilder::create()
 			->havingLocalEndpoint($endpoint)
 			->havingSampler($sampler)
