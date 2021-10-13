@@ -32,7 +32,7 @@ class AfterRequestListener extends ListenerAbstract {
 		$responseCode = $response->getStatusCode();
 		$span->setTag(HTTP_STATUS_CODE, $responseCode);
 		$span->log(['finish-request']);
-		if ($responseCode != 200) {
+		if ($responseCode > 400) {
 			$span->setTag(ERROR, $response->getBody()->getContents());
 		}
 		$this->finishSpan($span);
